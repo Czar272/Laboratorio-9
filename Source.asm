@@ -3,30 +3,20 @@
 ;Descripcion: Laboratorio 9
 ;Fecha de Entrega: 24/05/2023
 
-includelib libcmt.lib
-includelib libvcruntime.lib
-includelib libucrt.lib
-includelib legacy_stdio_definitions.lib
-extrn printf:near
-extrn scanf:near
-extrn exit:near
-
-
 .386
 .model flat, stdcall, c
 .stack 4096
 ExitProcess proto,dwExitCode:dword
 
 .data
-
-mesi    BYTE 1                                           ;contador de mes
+mesi WORD 1                                              ;contador de mes
 contArr DWORD 0                                          ;Contador para cambiar de montos de facturacion
 sumando DWORD 0                                          ;Suma total de montos
 entr    BYTE " ",0Ah,0                                   ;Enter 
 abajo   DWORD 100d                                       ;Dividir /100
 arriba  DWORD 5d                                         ;Multiplicar *5
 
-msg1 BYTE "fecha:          %d,   2022",0Ah,0                      ;Formato de vista 
+msg1 db "fecha:          %d,   2022",0Ah,0                      ;Formato de vista 
 msg2 BYTE "Cliente:          Pablito Pablon Pablun",0Ah,0
 msg3 BYTE "NIT:          2769967-2",0Ah,0
 msg4 BYTE "Monto Facturado:          %d.00",0Ah,0
@@ -35,14 +25,25 @@ msg6 BYTE "Monto de facturacion anual:  %d",0Ah,0
 msg7 BYTE "press any key to continue", 0Ah,0
 msg8 BYTE "¡¡¡¡¡¡AVISO!!!!!! Debe actualizar su Régimen tributario a IVA General",0Ah,0
 msg9 BYTE "Puede continuar como pequenio contribuyente",0Ah,0
-msg10 BYTE "Coloque el monto a facturar del mes %d:  ",0
+msg10 db "Coloque el monto a facturar del mes %d:  ",0
 
-montoMes DWORD 0
+;montoMes DWORD 0
+meses DWORD 1,2,3,4,5,6,7,8,9,10,11,12
 montoF DWORD 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0          ;Array para montos
 IVAarr DWORD 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0                                            ;Array para IVA
 format db "%d", 0
 
 .code
+
+includelib libucrt.lib
+includelib legacy_stdio_definitions.lib
+includelib libcmt.lib
+includelib libvcruntime.lib
+
+extrn printf:near
+extrn scanf:near
+extrn exit:near
+
 
 public main
 main    proc
@@ -56,20 +57,18 @@ main    proc
         mov ebx, 4
         imul ebx, contArr
 
-        push offset mesi
-        push offset msg10 		                            ; Imprimir mensaje
+        push [meses+ebx] 		                                ; Imprimir mensaje
+        push offset msg10
         call printf
         add esp, 8
 
-        lea  eax, montoMes 		                            ; Obtener dirección del buffer
+        lea  eax, [montoF+ebx] 		                            ; Obtener dirección del buffer
         push eax 				                            ; Empujar dirección a la pila
         push offset format 		                            ; Empujar formato a la pila
         call scanf 				                            ; Leer cadena desde la entrada estándar
-        add esp, 8
+        add esp, 8          
 
-        mov [montoF+ebx], eax                               ;Agrega el monto dado al array de montos
-                                                            
-        push offset mesi                                    ;Mes, año, nit, Monto Facturado
+        push [meses+ebx]                                    ;Mes, año, nit, Monto Facturado
         push offset msg1
         call printf
         add esp, 8
@@ -82,8 +81,8 @@ main    proc
         call printf
         add esp, 4
 
-        push [montoF+ebx]
-        push offset msg4
+        push [montoF+ebx]                                             ; Pone el número en la pila
+        push offset msg4                                    ; Pone la dirección de la cadena de formato en la pila
         call printf
         add esp, 8
                                                             
@@ -143,12 +142,6 @@ main    proc
 
 
     termino:
-
-        push offset sumando                                     ;Monto Final anual
-        push offset msg6
-        call printf
-        add esp, 8                                          
-        mov eax, sumando
                                                                 
         cmp sumando, 150000                                     ;monto>150000 -> mediano contribuyente
         jg mayor                                                ;monto<150000 -> pequeño contribuyente
@@ -180,4 +173,4 @@ main    proc
     call exit  
 
 main    endp
-         end  
+         end 
